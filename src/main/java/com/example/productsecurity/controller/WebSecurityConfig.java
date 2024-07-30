@@ -1,52 +1,64 @@
 package com.example.productsecurity.controller;
 
+import com.example.productsecurity.service.MyUserDetailService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.config.annotation.web.configurers.AbstractAuthenticationFilterConfigurer;
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
 
+    @Autowired
+    private MyUserDetailService userDetailService;
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity ) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity.authorizeHttpRequests(registry -> {
                     registry.requestMatchers("/maintenances/list").permitAll();
                     registry.requestMatchers("/maintenances/showFormForAdd").hasRole("ADMIN");
                     registry.requestMatchers("/maintenances/showFormForUpdate").hasRole("USER");
                     registry.anyRequest().authenticated();
                 })
-                .formLogin(AbstractAuthenticationFilterConfigurer::permitAll)
+                .formLogin(httpSecurityFormLoginConfigurer -> {
+                    httpSecurityFormLoginConfigurer
+                            .loginPage("/login")
+                            .defaultSuccessUrl("/maintenances/list", true)
+                            .failureUrl("/login?error=true")
+                            .permitAll();
+                })
+                .logout(httpSecurityLogoutConfigurer -> {
+                    httpSecurityLogoutConfigurer
+                            .logoutUrl("/logout")
+                            .logoutSuccessUrl("/login?logout=true")
+                            .permitAll();
+                })
                 .build();
     }
 
     @Bean
     public UserDetailsService userDetailsService() {
-        UserDetails normalUser = User.builder()
-                .username("kien")
-                .password("$2a$12$gJrnAsZLaLUI3FpEKtPeLuxV0BWbeEPGRbRBNzD4BQQP2j2nWgEkC")
-                .roles("USER")
-                .build();
-        UserDetails adminUser = User.builder()
-                .username("admin")
-                .password("$2a$12$PCh7cp9r7tRUmWPzifAa6.gfMfOhGxQyajZTBxBUfHQV/N89zOtT6")
-                .roles("ADMIN", "USER")
-                .build();
-        return new InMemoryUserDetailsManager(normalUser, adminUser);
+        return userDetailService;
+    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-
     }
 }
