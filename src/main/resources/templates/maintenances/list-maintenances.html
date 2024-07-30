@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+    <title>Maintenance List</title>
+</head>
+<body>
+<div class="container">
+    <h2>Maintenance List</h2>
+    <table class="table table-bordered table-hover">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Car ID</th>
+            <th>Description</th>
+            <th>Cost</th>
+            <th>Maintenance Type</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Use th:each to iterate over maintenances -->
+        <tr th:each="maintenance : ${maintenances}">
+            <!-- Display fields of maintenance -->
+            <td th:text="${maintenance.maintenanceId}"></td>
+            <td th:text="${maintenance.carId}"></td>
+            <td th:text="${maintenance.description}"></td>
+            <td th:text="${maintenance.cost}"></td>
+            <td th:text="${maintenance.maintenanceType}"></td>
+            <td>
+                <!-- Update button with correct URL and parameter -->
+                <a th:href="@{/maintenances/showFormForUpdate(maintenanceId=${maintenance.maintenanceId})}" class="btn btn-primary">Update</a>
+                <!-- Delete form with correct action URL and hidden input for ID -->
+                <form th:action="@{/maintenances/delete}" method="post" style="display:inline;">
+                    <input type="hidden" name="maintenanceId" th:value="${maintenance.maintenanceId}"/>
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this maintenance?');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <!-- Link to add new maintenance -->
+    <a th:href="@{/maintenances/showFormForAdd}" class="btn btn-success">Add New Maintenance</a>
+</div>
+</body>
+</html>
